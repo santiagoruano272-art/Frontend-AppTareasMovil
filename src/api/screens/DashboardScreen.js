@@ -1,11 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-
-import { AuthContext } from '../../context/authContext';
-import { userService } from '../api/apiService';
-
-const DashboardScreen = ({ navigation }) => {
+const DashboardScreen = ({ goToTasks }) => {
 
     const { userToken, Logout } = useContext(AuthContext);
     const [userData, setUserData] = useState(null);
@@ -29,7 +22,6 @@ const DashboardScreen = ({ navigation }) => {
         }
     };
 
-    // 🔥 SELECCIONAR IMAGEN
     const pickImage = async () => {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -48,20 +40,19 @@ const DashboardScreen = ({ navigation }) => {
         }
     };
 
-    // 🔥 SUBIR IMAGEN
     const uploadImage = async (uri) => {
         try {
             setLoading(true);
 
             const res = await userService.uploadProfileImage(userToken, uri);
 
-            console.log("IMAGEN SUBIDA:", res);
+            console.log("✅  IMAGEN SUBIDA:", res);
 
-            fetchProfile(); // 🔥 refresca datos
+            fetchProfile();
 
         } catch (error) {
             console.error(error);
-            Alert.alert("Error", "No se pudo subir la imagen");
+            Alert.alert("Error", "❌  No se pudo subir la imagen");
         } finally {
             setLoading(false);
         }
@@ -88,7 +79,6 @@ const DashboardScreen = ({ navigation }) => {
 
             <View style={styles.content}>
 
-                {/* FOTO */}
                 <TouchableOpacity onPress={pickImage}>
                     {userData?.foto_url ? (
                         <Image
@@ -102,7 +92,6 @@ const DashboardScreen = ({ navigation }) => {
                     )}
                 </TouchableOpacity>
 
-                {/* EMAIL */}
                 <Text style={styles.email}>
                     {userData?.email || "Sin correo"}
                 </Text>
@@ -113,7 +102,7 @@ const DashboardScreen = ({ navigation }) => {
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => navigation.navigate('Tasks')}
+                    onPress={goToTasks}
                 >
                     <Text style={styles.buttonText}>Ir a tareas</Text>
                 </TouchableOpacity>
@@ -123,67 +112,3 @@ const DashboardScreen = ({ navigation }) => {
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f0f2f5',
-        padding: 20
-    },
-    header: {
-        marginTop: 50,
-        flexDirection: 'row',
-        justifyContent: 'space-between'
-    },
-    title: {
-        fontSize: 22,
-        fontWeight: 'bold'
-    },
-    logout: {
-        color: 'red'
-    },
-    content: {
-        marginTop: 50,
-        alignItems: 'center'
-    },
-    avatar: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        marginBottom: 15
-    },
-    avatarPlaceholder: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: '#ddd',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 15
-    },
-    email: {
-        fontSize: 16,
-        color: '#333',
-        marginBottom: 10
-    },
-    welcome: {
-        fontSize: 20,
-        marginBottom: 20
-    },
-    button: {
-        backgroundColor: '#39A900',
-        padding: 12,
-        borderRadius: 10
-    },
-    buttonText: {
-        color: '#fff',
-        fontWeight: 'bold'
-    },
-    center: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center'
-    }
-});
-
-export default DashboardScreen;

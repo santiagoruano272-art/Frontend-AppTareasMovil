@@ -1,6 +1,5 @@
-const BASE_URL = "http://192.168.1.8:8000/api";
+const BASE_URL = "http://10.3.145.125:8000/api";
 
-// LOGIN
 export const loginService = async (email, password) => {
     const response = await fetch(`${BASE_URL}/auth/login/`, {
         method: "POST",
@@ -19,7 +18,6 @@ export const loginService = async (email, password) => {
     return data;
 };
 
-// TAREAS
 export const taskApiService = {
     getAll: (token) =>
         fetch(`${BASE_URL}/tareas/`, {
@@ -30,10 +28,8 @@ export const taskApiService = {
         }).then((res) => res.json()),
 };
 
-// PERFIL
 export const userService = {
 
-    // Obtener perfil
     getProfile: async (token) => {
         const res = await fetch(`${BASE_URL}/perfil/`, {
             method: "GET",
@@ -51,7 +47,6 @@ export const userService = {
         return data;
     },
 
-    // 🔥 Subir imagen
     uploadProfileImage: async (token, imageUri) => {
         const formData = new FormData();
 

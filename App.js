@@ -1,13 +1,17 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 
 import LoginScreen from './src/api/screens/LoginScreen';
 import DashboardScreen from './src/api/screens/DashboardScreen';
+import TaskScreen from './src/api/screens/TaskScreen';
+
 import { AuthProvider, AuthContext } from './context/authContext';
 
 const NavigationWrapper = () => {
   const { userToken, isLoading } = useContext(AuthContext);
+
+  const [screen, setScreen] = useState("dashboard");
 
   if (isLoading) {
     return (
@@ -18,13 +22,19 @@ const NavigationWrapper = () => {
     );
   }
 
-  // ❌ No logueado
   if (!userToken) {
     return <LoginScreen />;
   }
 
-  // ✅ Logueado → Dashboard
-  return <DashboardScreen />;
+  if (screen === "dashboard") {
+    return <DashboardScreen goToTasks={() => setScreen("tasks")} />;
+  }
+
+  if (screen === "tasks") {
+    return <TaskScreen goBack={() => setScreen("dashboard")} />;
+  }
+
+  return null;
 };
 
 export default function App() {
