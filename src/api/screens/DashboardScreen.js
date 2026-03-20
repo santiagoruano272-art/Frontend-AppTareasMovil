@@ -1,111 +1,149 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { View,Text,StyleSheet,Image,ActivityIndicator,TouchableOpacity
-} from 'react-native';
-import { AuthContext } from '../../context/authContext';
-import { profileService } from '../apiService';
+import React, { useContext, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { AuthContext } from '../../../context/authContext';
+import { userService } from '../apiService';
 
-const DashboardScreen = () => {
-  const { userToken, Logout } = useContext(AuthContext);
+const DashboardScreen = ({ navigation }) => {
+    console.log("DASHBOARD RENDER");
+    const { userToken, Logout } = useContext(AuthContext);
+    const [userData, setUserData] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const data = await profileService.getProfile(userToken);
-      console.log("PERFIL:", data);
-
-      setUser(data);
-    } catch (error) {
-      console.error("Error al obtener perfil:", error);
-    } finally {
-      setLoading(false);
+useEffect(() => {
+    if (userToken) {
+        setLoading(true);
+        fetchProfile();
     }
-  };
+}, [userToken]);
 
-  if (loading) {
+    const fetchProfile = async () => {
+        try {
+            const data = await userService.getProfile(userToken);
+            console.log("PERFIL:", data);
+            setUserData(data);
+        } catch (error) {
+            console.error("Error perfil:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color="#39A900" />
+                <Text>Cargando perfil...</Text>
+            </View>
+        );
+    }
+
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#39A900" />
-        <Text>Cargando perfil...</Text>
-      </View>
+        <View style={styles.container}>
+
+            <View style={styles.header}>
+                <Text style={styles.title}>Dashboard</Text>
+                <TouchableOpacity onPress={Logout}>
+                    <Text style={styles.logout}>Salir</Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.content}>
+
+                {/* FOTO */}
+                {userData?.foto_url ? (
+                    <Image 
+                        source={{ uri: userData.foto_url }} 
+                        style={styles.avatar}
+                    />
+                ) : (
+                    <View style={styles.avatarPlaceholder}>
+                        <Text>Sin Foto</Text>
+                    </View>
+                )}
+
+                {/* EMAIL */}
+                <Text style={styles.email}>
+                    {userData?.email || "Sin correo"}
+                </Text>
+
+                <Text style={styles.welcome}>
+                    Bienvenido a tu block de tareas 📒
+                </Text>
+
+                <TouchableOpacity 
+                    style={styles.button}
+                    onPress={() => navigation.navigate('Tasks')}
+                >
+                    <Text style={styles.buttonText}>Ir a tareas</Text>
+                </TouchableOpacity>
+
+            </View>
+
+        </View>
     );
-  }
-
-  return (
-    <View style={styles.container}>
-      
-      {/* FOTO DE PERFIL */}
-      <Image
-        source={{
-          uri: user?.foto_url || "https://via.placeholder.com/150"
-        }}
-        style={styles.avatar}
-      />
-
-      {/* DATOS DEL USUARIO */}
-      <Text style={styles.name}>
-        {user?.nombre || "Usuario"}
-      </Text>
-
-      <Text style={styles.email}>
-        {user?.email || "Sin email"}
-      </Text>
-
-      {/* BOTÓN LOGOUT */}
-      <TouchableOpacity style={styles.button} onPress={Logout}>
-        <Text style={styles.buttonText}>Cerrar Sesión</Text>
-      </TouchableOpacity>
-
-    </View>
-  );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#f0f2f5',
+        padding: 20
+    },
+    header: {
+        marginTop: 50,
+        flexDirection: 'row',
+        justifyContent: 'space-between'
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold'
+    },
+    logout: {
+        color: 'red'
+    },
+    content: {
+        marginTop: 50,
+        alignItems: 'center'
+    },
+    avatar: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        marginBottom: 15
+    },
+    avatarPlaceholder: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#ddd',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 15
+    },
+    email: {
+        fontSize: 16,
+        color: '#333',
+        marginBottom: 10
+    },
+    welcome: {
+        fontSize: 20,
+        marginBottom: 20
+    },
+    button: {
+        backgroundColor: '#39A900',
+        padding: 12,
+        borderRadius: 10
+    },
+    buttonText: {
+        color: '#fff',
+        fontWeight: 'bold'
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    }
+});
 
 export default DashboardScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
-    padding: 20
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  avatar: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    marginBottom: 20,
-    borderWidth: 3,
-    borderColor: '#39A900'
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333'
-  },
-  email: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 30
-  },
-  button: {
-    backgroundColor: '#ff4c4c',
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 10
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold'
-  }
-});
