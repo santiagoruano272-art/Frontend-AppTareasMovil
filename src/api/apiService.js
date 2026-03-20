@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "http://192.168.1.8:8000/api";
 
-// 🔐 LOGIN
 export const loginService = async (email, password) => {
     try {
         const response = await fetch(`${BASE_URL}/auth/login/`, {
@@ -28,10 +27,7 @@ export const loginService = async (email, password) => {
 };
 
 
-// 📒 TASKS API
 export const taskApiService = {
-
-    // 📥 Obtener tareas
     getAll: async (token) => {
         try {
             const res = await fetch(`${BASE_URL}/tareas/`, {
@@ -55,7 +51,6 @@ export const taskApiService = {
         }
     },
 
-    // ➕ Crear tarea
     create: async (token, data) => {
         try {
             const res = await fetch(`${BASE_URL}/tareas/`, {
@@ -81,7 +76,6 @@ export const taskApiService = {
         }
     },
 
-    // ✏️ Actualizar
     update: async (token, id, data) => {
         try {
             const res = await fetch(`${BASE_URL}/tareas/${id}/`, {
@@ -132,38 +126,32 @@ export const taskApiService = {
 
 
 export const userService = {
+    // 👇 YA TIENES getProfile
 
-    getProfile: async (token) => {
-        try {
-            const res = await fetch(`${BASE_URL}/perfil/`, {
-                method: "GET",
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                }
-            });
+    uploadProfileImage: async (token, imageUri) => {
+        const formData = new FormData();
 
-            const text = await res.text();
+        formData.append("imagen", {
+            uri: imageUri,
+            name: "profile.jpg",
+            type: "image/jpeg",
+        });
 
-            console.log("TOKEN:", token);
-            console.log("RAW PERFIL:", text);
+        const res = await fetch(`${BASE_URL}/perfil/foto/`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        });
 
-            // 🔍 Validar JSON
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                throw new Error("La respuesta NO es JSON");
-            }
+        const data = await res.json();
 
-            if (!res.ok) {
-                throw new Error(data.error || "Error al obtener perfil");
-            }
-
-            return data;
-
-        } catch (error) {
-            console.error("PROFILE ERROR:", error);
-            throw error;
+        if (!res.ok) {
+            throw new Error(data.error || "Error subiendo imagen");
         }
+
+        return data;
     }
 };
+

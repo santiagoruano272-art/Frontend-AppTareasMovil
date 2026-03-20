@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { AuthContext } from '../../../context/authContext';
 import { userService } from '../apiService';
+import * as ImagePicker from 'expo-image-picker';
 
 const DashboardScreen = ({ navigation }) => {
     console.log("DASHBOARD RENDER");
@@ -147,3 +148,34 @@ const styles = StyleSheet.create({
 
 export default DashboardScreen;
 
+
+
+const pickImage = async () => {
+    try {
+        // Permisos
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (!permission.granted) {
+            alert("Permiso requerido");
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+        });
+
+        if (!result.canceled) {
+            const imageUri = result.assets[0].uri;
+
+            console.log("IMAGEN:", imageUri);
+
+            uploadImage(imageUri);
+        }
+
+    } catch (error) {
+        console.error("Error picker:", error);
+    }
+};
