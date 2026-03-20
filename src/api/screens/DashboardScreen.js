@@ -1,21 +1,21 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import { AuthContext } from '../../../context/authContext';
-import { userService } from '../apiService';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
+import { AuthContext } from '../../context/authContext';
+import { userService } from '../api/apiService';
+
 const DashboardScreen = ({ navigation }) => {
-    console.log("DASHBOARD RENDER");
+
     const { userToken, Logout } = useContext(AuthContext);
     const [userData, setUserData] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-    if (userToken) {
-        setLoading(true);
-        fetchProfile();
-    }
-}, [userToken]);
+    useEffect(() => {
+        if (userToken) {
+            fetchProfile();
+        }
+    }, [userToken]);
 
     const fetchProfile = async () => {
         try {
@@ -29,11 +29,49 @@ useEffect(() => {
         }
     };
 
+    // 🔥 SELECCIONAR IMAGEN
+    const pickImage = async () => {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (!permission.granted) {
+            Alert.alert("Permiso requerido", "Debes permitir acceso a la galería");
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.7,
+        });
+
+        if (!result.canceled) {
+            uploadImage(result.assets[0].uri);
+        }
+    };
+
+    // 🔥 SUBIR IMAGEN
+    const uploadImage = async (uri) => {
+        try {
+            setLoading(true);
+
+            const res = await userService.uploadProfileImage(userToken, uri);
+
+            console.log("IMAGEN SUBIDA:", res);
+
+            fetchProfile(); // 🔥 refresca datos
+
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Error", "No se pudo subir la imagen");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading) {
         return (
             <View style={styles.center}>
                 <ActivityIndicator size="large" color="#39A900" />
-                <Text>Cargando perfil...</Text>
+                <Text>Cargando...</Text>
             </View>
         );
     }
@@ -51,16 +89,18 @@ useEffect(() => {
             <View style={styles.content}>
 
                 {/* FOTO */}
-                {userData?.foto_url ? (
-                    <Image 
-                        source={{ uri: userData.foto_url }} 
-                        style={styles.avatar}
-                    />
-                ) : (
-                    <View style={styles.avatarPlaceholder}>
-                        <Text>Sin Foto</Text>
-                    </View>
-                )}
+                <TouchableOpacity onPress={pickImage}>
+                    {userData?.foto_url ? (
+                        <Image
+                            source={{ uri: userData.foto_url }}
+                            style={styles.avatar}
+                        />
+                    ) : (
+                        <View style={styles.avatarPlaceholder}>
+                            <Text>Subir Foto</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
 
                 {/* EMAIL */}
                 <Text style={styles.email}>
@@ -68,10 +108,10 @@ useEffect(() => {
                 </Text>
 
                 <Text style={styles.welcome}>
-                    Bienvenido a tu block de tareas 📒
+                    Bienvenido 👋
                 </Text>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.button}
                     onPress={() => navigation.navigate('Tasks')}
                 >
@@ -147,35 +187,3 @@ const styles = StyleSheet.create({
 });
 
 export default DashboardScreen;
-
-
-
-const pickImage = async () => {
-    try {
-        // Permisos
-        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-        if (!permission.granted) {
-            alert("Permiso requerido");
-            return;
-        }
-
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.7,
-        });
-
-        if (!result.canceled) {
-            const imageUri = result.assets[0].uri;
-
-            console.log("IMAGEN:", imageUri);
-
-            uploadImage(imageUri);
-        }
-
-    } catch (error) {
-        console.error("Error picker:", error);
-    }
-};
