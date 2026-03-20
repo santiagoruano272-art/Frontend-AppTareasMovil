@@ -1,13 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  Button, 
-  ActivityIndicator, 
-  FlatList,
-  SafeAreaView 
+import { StyleSheet, Text, View, Button, ActivityIndicator, FlatList,SafeAreaView 
 } from 'react-native';
 
 import LoginScreen from './src/api/screens/LoginScreen';
@@ -49,7 +42,6 @@ const NavigationWrapper = () => {
     }
   };
 
-  // 🔄 Estado de carga inicial
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -64,13 +56,11 @@ const NavigationWrapper = () => {
     return (
       <SafeAreaView style={styles.container}>
         
-        {/* HEADER */}
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Mis Tareas</Text>
           <Button title="Salir" onPress={Logout} color="#ff4c4c" />
         </View>
 
-        {/* LISTADO */}
         {loadingTasks ? (
           <ActivityIndicator size="small" color="#00ff4c" style={{ marginTop: 20 }} />
         ) : (
