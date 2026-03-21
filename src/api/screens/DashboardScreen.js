@@ -1,5 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Image, Alert, StyleSheet } from 'react-native';
+import { View,Text,TouchableOpacity,ActivityIndicator,Image,Alert,StyleSheet
+} from 'react-native';
+
 import * as ImagePicker from 'expo-image-picker';
 
 import { AuthContext } from '../../../context/authContext';
@@ -8,11 +10,16 @@ import { userService } from '../apiService';
 const DashboardScreen = ({ goToTasks }) => {
 
     const { userToken, Logout } = useContext(AuthContext);
+
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
 
+    // 🔹 Cargar perfil
     useEffect(() => {
-        if (userToken) fetchProfile();
+        if (userToken) {
+            fetchProfile();
+        }
     }, [userToken]);
 
     const fetchProfile = async () => {
@@ -21,46 +28,66 @@ const DashboardScreen = ({ goToTasks }) => {
             setUserData(data);
         } catch (error) {
             console.error(error);
+            Alert.alert("Error", "No se pudo cargar el perfil");
         } finally {
             setLoading(false);
         }
     };
 
+    // 🔹 Seleccionar imagen
     const pickImage = async () => {
-        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        try {
+            console.log("📸 Abriendo galería...");
 
-        if (!permission.granted) {
-            Alert.alert("Permiso requerido");
-            return;
-        }
+            const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 0.7,
-        });
+            if (!permission.granted) {
+                Alert.alert("Permiso requerido", "Debes aceptar permisos");
+                return;
+            }
 
-        if (!result.canceled) {
-            uploadImage(result.assets[0].uri);
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                quality: 0.7,
+            });
+
+            console.log("RESULTADO:", result);
+
+            if (!result.canceled) {
+                uploadImage(result.assets[0].uri);
+            }
+
+        } catch (error) {
+            console.error("Error picker:", error);
+            Alert.alert("Error", "No se pudo abrir la galería");
         }
     };
 
+    // 🔹 Subir imagen
     const uploadImage = async (uri) => {
         try {
-            setLoading(true);
+            setUploading(true);
+
             await userService.uploadProfileImage(userToken, uri);
+
+            Alert.alert("Imagen actualizada");
+
             fetchProfile();
+
         } catch (error) {
+            console.error(error);
             Alert.alert("Error al subir imagen");
         } finally {
-            setLoading(false);
+            setUploading(false);
         }
     };
 
+    // 🔹 Loading inicial
     if (loading) {
         return (
             <View style={styles.center}>
                 <ActivityIndicator size="large" color="#39A900" />
-                <Text>Cargando...</Text>
+                <Text>Cargando perfil...</Text>
             </View>
         );
     }
@@ -68,25 +95,33 @@ const DashboardScreen = ({ goToTasks }) => {
     return (
         <View style={styles.container}>
 
+            {/* HEADER */}
             <View style={styles.header}>
                 <Text style={styles.title}>Dashboard</Text>
+
                 <TouchableOpacity onPress={Logout}>
-                    <Text style={styles.logout}>Salir</Text>
+                    <Text style={styles.logout}>Cerrar sesión</Text>
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.content}>
+            {/* PERFIL */}
+            <View style={styles.profile}>
 
-                {userData?.foto_url ? (
-                    <Image source={{ uri: userData.foto_url }} style={styles.avatar} />
-                ) : (
-                    <View style={styles.avatarPlaceholder}>
-                        <Text>Sin Foto</Text>
-                    </View>
-                )}
+                <TouchableOpacity onPress={pickImage}>
 
-                <TouchableOpacity style={styles.changePhotoBtn} onPress={pickImage}>
-                    <Text style={styles.changePhotoText}>Cambiar foto</Text>
+                    {uploading ? (
+                        <ActivityIndicator size="small" color="#39A900" />
+                    ) : userData?.foto_url ? (
+                        <Image
+                            source={{ uri: userData.foto_url }}
+                            style={styles.avatar}
+                        />
+                    ) : (
+                        <View style={styles.avatarPlaceholder}>
+                            <Text>Sin foto</Text>
+                        </View>
+                    )}
+
                 </TouchableOpacity>
 
                 <Text style={styles.email}>
@@ -94,99 +129,116 @@ const DashboardScreen = ({ goToTasks }) => {
                 </Text>
 
                 <Text style={styles.role}>
-                    Rol: {userData?.rol || "No definido"}
+                    {userData?.rol || "Usuario"}
                 </Text>
 
-                <Text style={styles.welcome}>
-                    Bienvenido a tu block de tareas 📒
-                </Text>
+            </View>
+
+            {/* ACCIONES */}
+            <View style={styles.actions}>
 
                 <TouchableOpacity style={styles.button} onPress={goToTasks}>
-                    <Text style={styles.buttonText}>Ir a tareas</Text>
+                    <Text style={styles.buttonText}>Ver tareas</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.buttonSecondary} onPress={pickImage}>
+                    <Text style={styles.buttonText}>Cambiar foto</Text>
                 </TouchableOpacity>
 
             </View>
+
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f0f2f5', padding: 20 },
 
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 40
-    },
-
-    title: { fontSize: 22, fontWeight: 'bold' },
-
-    logout: { color: 'red' },
-
-    content: {
-        marginTop: 40,
-        alignItems: 'center'
-    },
-
-    avatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50
-    },
-
-    avatarPlaceholder: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: '#ddd',
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-
-    changePhotoBtn: {
-        marginTop: 10,
-        backgroundColor: '#ccc',
-        padding: 8,
-        borderRadius: 6
-    },
-
-    changePhotoText: {
-        fontSize: 12
-    },
-
-    email: {
-        marginTop: 10
-    },
-
-    role: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 4,
-        marginBottom: 10
-    },
-
-    welcome: {
-        fontSize: 18,
-        marginVertical: 10
-    },
-
-    button: {
-        backgroundColor: '#39A900',
-        padding: 12,
-        borderRadius: 8,
-        marginTop: 10
-    },
-
-    buttonText: {
-        color: '#fff',
-        fontWeight: 'bold'
+    container: {
+        flex: 1,
+        backgroundColor: '#f0f2f5',
+        padding: 20
     },
 
     center: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center'
+    },
+
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 40,
+        marginBottom: 20
+    },
+
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold'
+    },
+
+    logout: {
+        color: 'red',
+        fontWeight: 'bold'
+    },
+
+    profile: {
+        alignItems: 'center',
+        marginTop: 30
+    },
+
+    avatar: {
+        width: 120,
+        height: 120,
+        borderRadius: 60
+    },
+
+    avatarPlaceholder: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#ddd',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+
+    email: {
+        marginTop: 15,
+        fontSize: 16
+    },
+
+    role: {
+        color: '#777',
+        marginTop: 5
+    },
+
+    actions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 40
+    },
+
+    button: {
+        backgroundColor: '#39A900',
+        padding: 15,
+        borderRadius: 10,
+        width: '48%',
+        alignItems: 'center'
+    },
+
+    buttonSecondary: {
+        backgroundColor: '#555',
+        padding: 15,
+        borderRadius: 10,
+        width: '48%',
+        alignItems: 'center'
+    },
+
+    buttonText: {
+        color: '#fff',
+        fontWeight: 'bold'
     }
+
 });
 
 export default DashboardScreen;

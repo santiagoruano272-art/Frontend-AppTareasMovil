@@ -19,20 +19,48 @@ export const loginService = async (email, password) => {
 };
 
 export const taskApiService = {
+
     getAll: (token) =>
         fetch(`${BASE_URL}/tareas/`, {
             method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`,
             },
-        }).then((res) => res.json()),
+        }).then(res => res.json()),
+
+    create: (token, data) =>
+        fetch(`${BASE_URL}/tareas/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+        }).then(res => res.json()),
+
+    update: (token, id, data) =>
+        fetch(`${BASE_URL}/tareas/${id}/`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+        }).then(res => res.json()),
+
+    delete: (token, id) =>
+        fetch(`${BASE_URL}/tareas/${id}/`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }),
 };
 
 export const userService = {
 
     getProfile: async (token) => {
         const res = await fetch(`${BASE_URL}/perfil/`, {
-            method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -41,26 +69,32 @@ export const userService = {
         const data = await res.json();
 
         if (!res.ok) {
-            throw new Error(data.error || "Error al obtener perfil");
+            throw new Error(data.error || "Error perfil");
         }
 
         return data;
     },
 
     uploadProfileImage: async (token, imageUri) => {
+
+        const getImageType = (uri) => {
+            if (uri.endsWith(".png")) return "image/png";
+            if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) return "image/jpeg";
+            return "image/jpeg";
+        };
+
         const formData = new FormData();
 
         formData.append("imagen", {
             uri: imageUri,
             name: "profile.jpg",
-            type: "image/jpeg",
+            type: getImageType(imageUri),
         });
 
         const res = await fetch(`${BASE_URL}/perfil/foto/`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
-                "Content-Type": "multipart/form-data",
             },
             body: formData,
         });
