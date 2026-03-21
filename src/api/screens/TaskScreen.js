@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Alert } from 'react-native';
 
 import { AuthContext } from '../../../context/authContext';
 import { taskApiService } from '../apiService';
@@ -7,42 +7,73 @@ import { taskApiService } from '../apiService';
 const TaskScreen = ({ goBack }) => {
 
     const { userToken } = useContext(AuthContext);
+
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    const [titulo, setTitulo] = useState("");
+    const [descripcion, setDescripcion] = useState("");
+    const [editingId, setEditingId] = useState(null);
+
     useEffect(() => {
-        if (userToken) {
-            fetchTasks();
-        }
-    }, [userToken]);
+        fetchTasks();
+    }, []);
 
     const fetchTasks = async () => {
         try {
             setLoading(true);
-
             const data = await taskApiService.getAll(userToken);
 
-            console.log("TAREAS:", data);
-
-            if (data && data.datos) {
-                setTasks(data.datos);
-            } else {
-                setTasks([]);
-            }
-
+            setTasks(data?.datos || []);
         } catch (error) {
-            console.error("Error al obtener las tareas tasks:", error);
-            setTasks([]);
+            console.error(error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const saveTask = async () => {
+        try {
+            if (!titulo) {
+                Alert.alert("El título es obligatorio");
+                return;
+            }
+
+            if (editingId) {
+                await taskApiService.update(userToken, editingId, { titulo, descripcion });
+            } else {
+                await taskApiService.create(userToken, { titulo, descripcion });
+            }
+
+            setTitulo("");
+            setDescripcion("");
+            setEditingId(null);
+            fetchTasks();
+
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const deleteTask = async (id) => {
+        try {
+            await taskApiService.delete(userToken, id);
+            fetchTasks();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const editTask = (task) => {
+        setTitulo(task.titulo);
+        setDescripcion(task.descripcion);
+        setEditingId(task.id);
     };
 
     if (loading) {
         return (
             <View style={styles.center}>
                 <ActivityIndicator size="large" color="#39A900" />
-                <Text>Cargando tareas...</Text>
             </View>
         );
     }
@@ -54,31 +85,49 @@ const TaskScreen = ({ goBack }) => {
                 <Text style={styles.back}>← Volver</Text>
             </TouchableOpacity>
 
-            <Text style={styles.title}>Tus Tareas</Text>
+            <Text style={styles.title}>Mis Tareas</Text>
+
+            <TextInput
+                placeholder="Título"
+                style={styles.input}
+                value={titulo}
+                onChangeText={setTitulo}
+            />
+
+            <TextInput
+                placeholder="Descripción"
+                style={styles.input}
+                value={descripcion}
+                onChangeText={setDescripcion}
+            />
+
+            <TouchableOpacity style={styles.addBtn} onPress={saveTask}>
+                <Text style={styles.addText}>
+                    {editingId ? "Actualizar" : "Agregar"}
+                </Text>
+            </TouchableOpacity>
 
             <FlatList
                 data={tasks}
-                keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-                contentContainerStyle={styles.list}
+                keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                    <View style={styles.taskItem}>
-                        <Text style={styles.taskTitle}>
-                            {item.titulo || "Sin título"}
-                        </Text>
-                        <Text style={styles.taskDescription}>
-                            {item.descripcion || "Sin descripción"}
-                        </Text>
+                    <View style={styles.card}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.cardTitle}>{item.titulo}</Text>
+                            <Text style={styles.cardDesc}>{item.descripcion}</Text>
+                        </View>
+
+                        <View style={styles.actions}>
+                            <TouchableOpacity onPress={() => editTask(item)}>
+                                <Text>✏️</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity onPress={() => deleteTask(item.id)}>
+                                <Text>🗑️</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 )}
-                ListEmptyComponent={
-                    <View style={styles.center}>
-                        <Text style={styles.empty}>No hay tareas aún</Text>
-
-                        <TouchableOpacity style={styles.reloadBtn} onPress={fetchTasks}>
-                            <Text style={styles.reloadText}>Actualizar</Text>
-                        </TouchableOpacity>
-                    </View>
-                }
             />
 
         </View>
@@ -86,58 +135,47 @@ const TaskScreen = ({ goBack }) => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f0f2f5',
-        padding: 20
+    container: { flex: 1, backgroundColor: '#f0f2f5', padding: 20 },
+
+    back: { marginTop: 40, color: '#39A900', fontWeight: 'bold' },
+
+    title: { fontSize: 22, fontWeight: 'bold', marginVertical: 10 },
+
+    input: {
+        backgroundColor: '#fff',
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 10
     },
-    back: {
-        color: '#39A900',
-        marginTop: 40,
-        marginBottom: 10,
-        fontWeight: 'bold'
+
+    addBtn: {
+        backgroundColor: '#39A900',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 15,
+        alignItems: 'center'
     },
-    title: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        marginBottom: 15
-    },
-    list: {
-        paddingBottom: 20
-    },
-    taskItem: {
+
+    addText: { color: '#fff', fontWeight: 'bold' },
+
+    card: {
+        flexDirection: 'row',
         backgroundColor: '#fff',
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
-        elevation: 2
-    },
-    taskTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 5
-    },
-    taskDescription: {
-        color: '#555'
-    },
-    empty: {
-        color: '#999',
-        marginBottom: 10
-    },
-    reloadBtn: {
-        backgroundColor: '#39A900',
-        padding: 10,
-        borderRadius: 8
-    },
-    reloadText: {
-        color: '#fff',
-        fontWeight: 'bold'
-    },
-    center: {
-        flex: 1,
-        justifyContent: 'center',
         alignItems: 'center'
-    }
+    },
+
+    cardTitle: { fontWeight: 'bold' },
+    cardDesc: { color: '#555' },
+
+    actions: {
+        flexDirection: 'row',
+        gap: 10
+    },
+
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' }
 });
 
 export default TaskScreen;
