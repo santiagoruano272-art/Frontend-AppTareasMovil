@@ -1,5 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View,Text,TouchableOpacity,ActivityIndicator,Image,Alert,StyleSheet
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    ActivityIndicator,
+    Image,
+    Alert,
+    StyleSheet
 } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
@@ -37,8 +44,6 @@ const DashboardScreen = ({ goToTasks }) => {
     // 🔹 Seleccionar imagen
     const pickImage = async () => {
         try {
-            console.log("📸 Abriendo galería...");
-
             const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
             if (!permission.granted) {
@@ -50,8 +55,6 @@ const DashboardScreen = ({ goToTasks }) => {
                 mediaTypes: ['images'],
                 quality: 0.7,
             });
-
-            console.log("RESULTADO:", result);
 
             if (!result.canceled) {
                 uploadImage(result.assets[0].uri);
@@ -71,7 +74,6 @@ const DashboardScreen = ({ goToTasks }) => {
             await userService.uploadProfileImage(userToken, uri);
 
             Alert.alert("Imagen actualizada");
-
             fetchProfile();
 
         } catch (error) {
@@ -82,7 +84,7 @@ const DashboardScreen = ({ goToTasks }) => {
         }
     };
 
-    // 🔹 Loading inicial
+    // 🔹 Loading
     if (loading) {
         return (
             <View style={styles.center}>
@@ -107,6 +109,18 @@ const DashboardScreen = ({ goToTasks }) => {
             {/* PERFIL */}
             <View style={styles.profile}>
 
+                {/* INFO IZQUIERDA */}
+                <View style={styles.info}>
+                    <Text style={styles.email}>
+                        {userData?.email || "Sin correo"}
+                    </Text>
+
+                    <Text style={styles.role}>
+                        {userData?.rol || "Usuario"}
+                    </Text>
+                </View>
+
+                {/* FOTO DERECHA */}
                 <TouchableOpacity onPress={pickImage}>
 
                     {uploading ? (
@@ -123,14 +137,6 @@ const DashboardScreen = ({ goToTasks }) => {
                     )}
 
                 </TouchableOpacity>
-
-                <Text style={styles.email}>
-                    {userData?.email || "Sin correo"}
-                </Text>
-
-                <Text style={styles.role}>
-                    {userData?.rol || "Usuario"} 
-                </Text>
 
             </View>
 
@@ -183,28 +189,38 @@ const styles = StyleSheet.create({
     },
 
     profile: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 30
+        marginTop: 30,
+        backgroundColor: '#fff',
+        padding: 15,
+        borderRadius: 12,
+        elevation: 2
+    },
+
+    info: {
+        flex: 1
     },
 
     avatar: {
-        width: 120,
-        height: 120,
-        borderRadius: 60
+        width: 110,
+        height: 80,
+        borderRadius: 10
     },
 
     avatarPlaceholder: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
+        width: 110,
+        height: 80,
+        borderRadius: 10,
         backgroundColor: '#ddd',
         justifyContent: 'center',
         alignItems: 'center'
     },
 
     email: {
-        marginTop: 15,
-        fontSize: 16
+        fontSize: 16,
+        fontWeight: 'bold'
     },
 
     role: {
