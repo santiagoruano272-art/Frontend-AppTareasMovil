@@ -49,8 +49,15 @@ const TaskScreen = ({ goBack }) => {
 
     // 🔹 CREAR / EDITAR
     const handleSave = async () => {
-        if (!titulo.trim()) {
-            Alert.alert("Error", "El título es obligatorio");
+
+        // ✅ VALIDACIONES FRONTEND
+        if (titulo.trim().length < 5) {
+            Alert.alert("Error", "El título debe tener mínimo 5 caracteres");
+            return;
+        }
+
+        if (descripcion.trim().length < 10) {
+            Alert.alert("Error", "La descripción debe tener mínimo 10 caracteres");
             return;
         }
 
@@ -121,7 +128,7 @@ const TaskScreen = ({ goBack }) => {
     return (
         <View style={styles.container}>
 
-            {/* 🔥 HEADER CON BOTÓN FUNCIONANDO */}
+            {/* HEADER */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={goBack}>
                     <Text style={styles.back}>← Volver</Text>
@@ -144,8 +151,13 @@ const TaskScreen = ({ goBack }) => {
                 renderItem={({ item }) => (
                     <View style={styles.card}>
 
-                        <Text style={styles.taskTitle}>{item.titulo}</Text>
-                        <Text style={styles.taskDesc}>{item.descripcion}</Text>
+                        <Text style={styles.taskTitle}>
+                            {item.titulo}
+                        </Text>
+
+                        <Text style={styles.taskDesc}>
+                            {item.descripcion}
+                        </Text>
 
                         <View style={styles.actions}>
                             <TouchableOpacity onPress={() => handleEdit(item)}>
@@ -184,14 +196,14 @@ const TaskScreen = ({ goBack }) => {
                     </Text>
 
                     <TextInput
-                        placeholder="Título"
+                        placeholder="Título (mínimo 5 caracteres)"
                         style={styles.input}
                         value={titulo}
                         onChangeText={setTitulo}
                     />
 
                     <TextInput
-                        placeholder="Descripción"
+                        placeholder="Descripción (mínimo 10 caracteres)"
                         style={styles.input}
                         value={descripcion}
                         onChangeText={setDescripcion}
