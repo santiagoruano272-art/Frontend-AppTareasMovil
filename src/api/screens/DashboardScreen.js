@@ -129,7 +129,7 @@ const DashboardScreen = ({ goToTasks }) => {
                 </Text>
 
                 <Text style={styles.role}>
-                    {userData?.rol || "Usuario"}
+                    {userData?.rol || "Usuario"} 
                 </Text>
 
             </View>
